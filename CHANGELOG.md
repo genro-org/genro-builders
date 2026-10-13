@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.28.0 — 2026-10-13
+
+- Add `CustomTypes.register(name, type, annotation)` and named aliases in signatures.
+- Share Regex/Range definitions through the 1.2 grammar catalog; keep loading and
+  exporting legacy 1.1 grammars without named types. Reject catalog name conflicts.
+- Recheck registered constraints before resolving or discovering Source pointers,
+  including deserialized Source, and during explicit Source validation.
+- Verify current stable Genro dependencies and raise their Python minimum versions.
+
 ## 0.27.0 — 2026-09-29
 
 - A builder class declares its JSON grammar documents (`builder_grammar` 1.1)

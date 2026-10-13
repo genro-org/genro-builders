@@ -59,6 +59,21 @@ def _split_annotated(tp: Any) -> tuple[Any, list]:
 
 def _check_type(value: Any, tp: Any, *, strict_json_primitives: bool = False) -> bool:
     """Check if value matches the type annotation."""
+    if get_origin(tp) in (Union, types.UnionType):
+        from .custom_types import _contains_custom_type
+
+        if _contains_custom_type(tp):
+            return any(_check_type(value, arg, strict_json_primitives=strict_json_primitives)
+                       for arg in get_args(tp))
+    if get_origin(tp) is Annotated:
+        from .custom_types import _CustomType
+
+        for metadata in get_args(tp)[1:]:
+            if isinstance(metadata, _CustomType):
+                try:
+                    metadata(value)
+                except (TypeError, ValueError):
+                    return False
     tp, _ = _split_annotated(tp)
 
     origin = get_origin(tp)

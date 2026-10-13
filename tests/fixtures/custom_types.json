@@ -1,0 +1,361 @@
+{
+  "document_format": {
+    "name": "builder_grammar",
+    "version": "1.2"
+  },
+  "grammar": {
+    "name": "custom_types_contract",
+    "version": null,
+    "title": null,
+    "description": null
+  },
+  "abstracts": {},
+  "elements": {
+    "dataSetter": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "destination",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "type",
+              "module": "builtins",
+              "name": "str"
+            },
+            "has_default": false
+          },
+          {
+            "name": "value",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "any"
+            },
+            "has_default": false
+          },
+          {
+            "name": "attr",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "any"
+            },
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "dataFormula": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "destination",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "type",
+              "module": "builtins",
+              "name": "str"
+            },
+            "has_default": false
+          },
+          {
+            "name": "func",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "str"
+                },
+                {
+                  "kind": "type",
+                  "module": "collections.abc",
+                  "name": "Callable"
+                }
+              ]
+            },
+            "has_default": false
+          },
+          {
+            "name": "kwargs",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": null,
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "dataController": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "func",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "str"
+                },
+                {
+                  "kind": "type",
+                  "module": "collections.abc",
+                  "name": "Callable"
+                }
+              ]
+            },
+            "has_default": false
+          },
+          {
+            "name": "kwargs",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": null,
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "contact": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "method",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "custom",
+              "name": "no_pointer"
+            },
+            "has_default": false
+          },
+          {
+            "name": "code",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "custom",
+              "name": "code"
+            },
+            "has_default": false
+          },
+          {
+            "name": "record_id",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "type",
+              "module": "builtins",
+              "name": "str"
+            },
+            "has_default": true,
+            "default": ""
+          }
+        ],
+        "accepts_var_keyword": false,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": null
+    },
+    "count": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "node_value",
+            "kind": "positional_or_keyword",
+            "role": "value",
+            "annotation": {
+              "kind": "custom",
+              "name": "positive"
+            },
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": false,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": null
+    },
+    "optional": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "method",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "custom",
+                  "name": "no_pointer"
+                },
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "NoneType"
+                }
+              ]
+            },
+            "has_default": true,
+            "default": null
+          }
+        ],
+        "accepts_var_keyword": false,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": null
+    },
+    "codes": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "values",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "generic",
+              "origin": {
+                "kind": "type",
+                "module": "builtins",
+                "name": "list"
+              },
+              "arguments": [
+                {
+                  "kind": "custom",
+                  "name": "code"
+                }
+              ]
+            },
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": false,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": null
+    }
+  },
+  "custom_types": {
+    "no_pointer": {
+      "kind": "annotated",
+      "base": {
+        "kind": "type",
+        "module": "builtins",
+        "name": "str"
+      },
+      "metadata": [
+        {
+          "kind": "regex",
+          "pattern": "(?![\\^=])[\\s\\S]*",
+          "flags": 0
+        }
+      ]
+    },
+    "code": {
+      "kind": "annotated",
+      "base": {
+        "kind": "type",
+        "module": "builtins",
+        "name": "str"
+      },
+      "metadata": [
+        {
+          "kind": "regex",
+          "pattern": "[A-Z]{2}[0-9]{4}",
+          "flags": 0
+        }
+      ]
+    },
+    "positive": {
+      "kind": "annotated",
+      "base": {
+        "kind": "type",
+        "module": "builtins",
+        "name": "int"
+      },
+      "metadata": [
+        {
+          "kind": "range",
+          "ge": 1,
+          "le": null,
+          "gt": null,
+          "lt": null
+        }
+      ]
+    }
+  }
+}

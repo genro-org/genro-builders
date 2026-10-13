@@ -172,6 +172,7 @@ class _SourceBagNodeMixin:
         attribute name. A pointer is any string starting with ``^``.
         Walks only this node — does not recurse into children.
         """
+        self.builder._validate_custom_types(self)
         result: list[tuple[str, str]] = [
             (attrname, v)
             for attrname, v in self.attr.items()

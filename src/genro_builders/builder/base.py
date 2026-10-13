@@ -47,6 +47,7 @@ from ._utilities import (
     _pop_decorated_methods,
 )
 from .source_bag import SourceBag
+from .custom_types import _check_custom_type_names
 from .target_wrapper import TargetWrapper
 
 # Template token spotted by ``runtime_values`` for ``${name}`` placeholders.
@@ -348,6 +349,7 @@ class BuilderBase(
                         f"{cls.__name__}.{node.label}: {exc}"
                     ) from None
 
+        _check_custom_type_names(cls._class_schema)
         cls._schema_tag_names = {}
         for node in cls._class_schema.nodes:
             label = node.label
@@ -432,7 +434,7 @@ class BuilderBase(
 
     @classmethod
     def to_grammar(cls, path: str | Path) -> None:
-        """Serialize the grammar to a ``builder_grammar`` v1.1 JSON file.
+        """Serialize to v1.1 JSON, or v1.2 when named custom types are used.
 
         The output is a language-neutral document that describes the
         builder's grammar (two sections: abstracts and elements;
@@ -840,6 +842,7 @@ class BuilderBase(
         to be BOTH emitted and reused goes through a template itself:
         ``t="hello", title="${t}", aria_label="${t} world"``.
         """
+        node.builder._validate_custom_types(node)
         is_data_element = bool(node._get_meta("data_element"))
         resolved: dict[Any, Any] = {}
         carried: dict[str, Any] = {}
@@ -954,6 +957,7 @@ class BuilderBase(
         problems = []
         for node in self.source.traverse():
             builder = node.builder
+            builder._validate_custom_types(node)
             if not builder.require_sub_tag_validation(node):
                 continue
             missing = builder._validate_sub_tags(
