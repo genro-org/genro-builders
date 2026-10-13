@@ -29,9 +29,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any, Literal, NoReturn, Union, get_args, get_origin
 
-from ._grammar_export import FORMAT_NAME, FORMAT_VERSION
+from ._grammar_export import CUSTOM_TYPES_FORMAT_VERSION, FORMAT_NAME, FORMAT_VERSION
 from ._utilities import SIGNATURE_SKIP_PARAMS, _parse_sub_tags_spec, _split_annotated
 from ._validators import Range, Regex
+from .custom_types import CustomTypes, _CustomType
 
 _ABSTRACT_KEYS = ("doc", "sub_tags", "parent_tags", "inherits_from", "ns", "attributes", "_meta")
 _ELEMENT_KEYS = _ABSTRACT_KEYS + ("node_label", "collection_key")
@@ -82,7 +83,7 @@ _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 #: Regex constructs genro-builders-js refuses (``grammar-loader.js``):
 #: ``\A \Z \w \W \d \D \s \S``, ``(?P<``/``(?P=``/``(?P!``,
 #: conditionals ``(?(`` and atomic groups ``(?>``.
-_NON_PORTABLE_REGEX = re.compile(r"\\[AZwWdDsS]|\(\?P[<=!]|\(\?\(|\(\?>")
+_NON_PORTABLE_REGEX = re.compile(r"\\[AZzUwWdDsSabBN0-9]|\(\?P[<=!]|\(\?\(|\(\?>|\(\?#|\(\?[aiLmsux-]|[+*?}]\+|\{,")
 
 _CARDINALITY_ITEM = re.compile(r"([A-Za-z_][A-Za-z0-9_]*|\*)(?:\[(?:(\d+)|(\d*):(\d*))\])?")
 
@@ -120,7 +121,7 @@ def _accepts_none(annotation: Any) -> bool:
         return None in get_args(annotation)
     if origin is Annotated:
         base, *metadata = get_args(annotation)
-        return _accepts_none(base) and not any(isinstance(m, (Range, Regex)) for m in metadata)
+        return _accepts_none(base) and not any(isinstance(m, (Range, Regex, _CustomType)) for m in metadata)
     return False
 
 
@@ -146,12 +147,20 @@ def _string_or_null(item: dict[str, Any], keys: tuple[str, ...], path: str) -> N
             _fail(f"{path}.{key}", "must be a string or null")
 
 
-def _annotation(desc: Any, path: str) -> Any:
+def _annotation(desc: Any, path: str, custom_types: Any = None) -> Any:
     """Decode an annotation descriptor into a Python annotation."""
     if desc is None:
         return None
     item = _object(desc, path)
     kind = item.get("kind")
+    if kind == "custom":
+        if set(item) != {"kind", "name"} or type(item["name"]) is not str:
+            _fail(path, "custom requires only kind and string name")
+        if custom_types is None:
+            _fail(path, "custom type references require a catalog; nested catalog references are unsupported")
+        if item["name"] not in custom_types._types:
+            _fail(path, f"unknown custom type {item['name']!r}")
+        return custom_types._types[item["name"]]
     if kind == "any":
         return Any
     if kind == "ellipsis":
@@ -170,23 +179,23 @@ def _annotation(desc: Any, path: str) -> Any:
         items = item.get("items")
         if type(items) is not list or not items:
             _fail(path, "union items must be a non-empty array")
-        args = tuple(_annotation(v, f"{path}.items[{i}]") for i, v in enumerate(items))
+        args = tuple(_annotation(v, f"{path}.items[{i}]", custom_types) for i, v in enumerate(items))
         if None in args:
             _fail(path, "a null descriptor cannot be a union member")
         return Union[args]
     if kind == "generic":
-        origin = _annotation(item.get("origin"), f"{path}.origin")
+        origin = _annotation(item.get("origin"), f"{path}.origin", custom_types)
         if origin not in (list, dict, tuple, set):
             _fail(path, "only list, dict, tuple and set generic origins are supported")
         raw_args = item.get("arguments")
         if type(raw_args) is not list:
             _fail(path, "generic arguments must be an array")
-        args = tuple(_annotation(v, f"{path}.arguments[{i}]") for i, v in enumerate(raw_args))
+        args = tuple(_annotation(v, f"{path}.arguments[{i}]", custom_types) for i, v in enumerate(raw_args))
         if None in args:
             _fail(path, "generic arguments cannot be null")
         return origin[args[0] if len(args) == 1 else args]
     if kind == "annotated":
-        base = _annotation(item.get("base"), f"{path}.base")
+        base = _annotation(item.get("base"), f"{path}.base", custom_types)
         if base is None:
             _fail(path, "annotated base cannot be null")
         metadata = item.get("metadata")
@@ -213,7 +222,7 @@ def _metadata(desc: Any, path: str) -> Any:
             _fail(path, f"unsupported Python regex flags {unsupported}")
         if flags & 2:
             _fail(path, "IGNORECASE is not portable across Python and JavaScript Unicode rules")
-        if _NON_PORTABLE_REGEX.search(pattern):
+        if _NON_PORTABLE_REGEX.search(pattern.replace(r"[\s\S]", ".")):
             _fail(path, "regex uses a non-portable construct or character class")
         try:
             re.compile(pattern, flags)
@@ -235,8 +244,30 @@ def _metadata(desc: Any, path: str) -> Any:
     _fail(path, f"unsupported annotation metadata kind {kind!r}")
 
 
+def _custom_types(raw: Any) -> CustomTypes:
+    """Decode a catalog without imports, executable metadata or dependencies."""
+    registry = CustomTypes()
+    for name, definition in _object(raw, "custom_types").items():
+        path = f"custom_types.{name}"
+        item = _object(definition, path)
+        if set(item) != {"kind", "base", "metadata"} or item["kind"] != "annotated":
+            _fail(path, "custom definition must be an annotated base with one validator")
+        metadata = item["metadata"]
+        if (type(metadata) is not list or len(metadata) != 1
+                or not isinstance(metadata[0], dict)
+                or metadata[0].get("kind") not in ("regex", "range")):
+            _fail(path, "custom definition requires one portable Regex or Range validator")
+        base = _annotation(item["base"], f"{path}.base")
+        expected = (str,) if metadata[0]["kind"] == "regex" else (int, float)
+        if base not in expected:
+            _fail(path, "portable Regex requires str; portable Range requires int or float")
+        validator = _metadata(metadata[0], f"{path}.metadata[0]")
+        registry.register(name, base, validator)
+    return registry
+
+
 def _signature(
-    desc: dict[str, Any], path: str, *, component: bool,
+    desc: dict[str, Any], path: str, *, component: bool, custom_types: Any = None,
 ) -> tuple[dict[str, tuple[Any, list, Any]], set[str], bool, set[str], set[str]]:
     """Compile an ``attributes`` descriptor into the schema signature keys.
 
@@ -296,7 +327,7 @@ def _signature(
             _fail(ppath, f"unknown framework parameter {name!r}")
         if role == "value" and name != "node_value":
             _fail(ppath, "the value role is reserved for node_value")
-        annotation = _annotation(param["annotation"], f"{ppath}.annotation")
+        annotation = _annotation(param["annotation"], f"{ppath}.annotation", custom_types)
         if kind in _VARIADIC_KINDS or role == "framework" or name == component_root:
             continue
         declared.add(name)
@@ -312,7 +343,7 @@ def _signature(
     return validations, declared, found_var_keyword, required_names, nullable_names
 
 
-def _declaration(raw: Any, path: str, *, is_element: bool) -> dict[str, Any]:
+def _declaration(raw: Any, path: str, *, is_element: bool, custom_types: Any = None) -> dict[str, Any]:
     """Validate one entry and return its schema-node attributes."""
     keys = _ELEMENT_KEYS if is_element else _ABSTRACT_KEYS
     item = _object(raw, path)
@@ -343,7 +374,7 @@ def _declaration(raw: Any, path: str, *, is_element: bool) -> dict[str, Any]:
         attrs["ns"] = item["ns"]
     if not is_element:
         if attributes is not None:
-            _signature(attributes, f"{path}.attributes", component=False)
+            _signature(attributes, f"{path}.attributes", component=False, custom_types=custom_types)
         return attrs
     _string_or_null(item, ("node_label", "collection_key"), path)
     attrs["node_label"] = item["node_label"]
@@ -351,7 +382,7 @@ def _declaration(raw: Any, path: str, *, is_element: bool) -> dict[str, Any]:
     if attributes is not None:
         validations, declared, accepts_var_keyword, required_names, nullable_names = _signature(
             attributes, f"{path}.attributes",
-            component=bool((item["_meta"] or {}).get("component")),
+            component=bool((item["_meta"] or {}).get("component")), custom_types=custom_types,
         )
         attrs["call_args_validations"] = validations
         attrs["declared_names"] = declared
@@ -389,10 +420,18 @@ def _declarations(
     document: Any,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     root = _object(document, "document")
-    if set(root) != {"document_format", "grammar", "abstracts", "elements"}:
+    required = {"document_format", "grammar", "abstracts", "elements"}
+    if not required <= set(root) or set(root) - (required | {"custom_types"}):
         _fail("document", "must contain exactly document_format, grammar, abstracts and elements")
-    if root["document_format"] != {"name": FORMAT_NAME, "version": FORMAT_VERSION}:
-        _fail("document_format", f"expected {FORMAT_NAME} version {FORMAT_VERSION}")
+    if root["document_format"] not in (
+        {"name": FORMAT_NAME, "version": FORMAT_VERSION},
+        {"name": FORMAT_NAME, "version": CUSTOM_TYPES_FORMAT_VERSION},
+    ):
+        _fail("document_format", f"expected {FORMAT_NAME} version 1.1 or 1.2")
+    if "custom_types" in root and root["document_format"]["version"] != CUSTOM_TYPES_FORMAT_VERSION:
+        _fail("document_format", "custom_types requires version 1.2")
+    catalog = _json_copy(root.get("custom_types", {}), "custom_types")
+    custom_types = _custom_types(catalog)
     grammar = _object(root["grammar"], "grammar")
     if set(grammar) != {"name", "version", "title", "description"}:
         _fail("grammar", "must contain exactly name, version, title and description")
@@ -406,6 +445,8 @@ def _declarations(
         for name, raw in entries.items():
             if not name or name.startswith("_"):
                 _fail(section, f"invalid public name {name!r}")
-            declarations[name] = _declaration(raw, f"{section}.{name}", is_element=is_element)
+            declarations[name] = _declaration(raw, f"{section}.{name}", is_element=is_element, custom_types=custom_types)
+            if catalog:
+                declarations[name]["custom_types"] = catalog
         sections.append(declarations)
     return sections[0], sections[1]

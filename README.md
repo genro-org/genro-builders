@@ -222,3 +222,6 @@ Known consumers in the Genro ecosystem:
 ## License
 
 Apache License 2.0 — Copyright 2025 Softwell S.r.l.
+
+Reusable named input constraints: see [CustomTypes](docs/builders/custom-types.md) for
+`ct.register(name, type, annotation)`, `ct.name` signatures, and Python/JS catalogs.

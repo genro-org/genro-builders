@@ -1,8 +1,8 @@
-# `builder_grammar` v1.1 — format specification
+# `builder_grammar` v1.1 / v1.2 — format specification
 
-**Last Updated**: 2026-09-29
+**Last Updated**: 2026-10-13
 **Status**: 🔴 DA REVISIONARE — documento non ancora approvato
-**Format version**: 1.1
+**Format versions**: 1.1 (legacy), 1.2 (named custom types)
 
 ---
 
@@ -49,7 +49,8 @@ convention, not a contract.
 ## 3. Document structure
 
 A `builder_grammar` document is a JSON object with **four top-level
-keys**, always present, in this exact order:
+required keys**, always present, in this exact order. Version 1.2 may also
+carry `custom_types` (§4.4):
 
 ```json
 {
@@ -76,7 +77,7 @@ that `_meta` marker (see §4.2).
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | Always `"builder_grammar"`. Identifies the format. |
-| `version` | string | Format version, `"1.1"`. Independent from `grammar.version`. A consumer refuses any other value. |
+| `version` | string | Format version, `"1.1"` or `"1.2"`. Independent from `grammar.version`. Other versions are refused. |
 
 `document_format` is **always the first key** of the document.
 
@@ -310,6 +311,68 @@ refuses a `type` outside the portable list: a document never makes it
 import a module.
 
 ---
+
+### 4.4 Named custom types (version 1.2)
+
+A 1.2 document may add a top-level `custom_types` object. Each name maps to
+an `annotated` definition with `base` and exactly one portable `regex` or
+`range` metadata descriptor. Portable pairs are Regex/`builtins.str` and
+Range/`builtins.int` or `builtins.float`, with finite JSON numeric inputs.
+Other combinations are rejected. For example:
+
+```json
+{
+  "custom_types": {
+    "no_pointer": {
+      "kind": "annotated",
+      "base": {"kind": "type", "module": "builtins", "name": "str"},
+      "metadata": [
+        {"kind": "regex", "pattern": "(?![\\^=])[\\s\\S]*", "flags": 0}
+      ]
+    }
+  }
+}
+```
+
+A parameter refers to this definition using
+`"annotation": {"kind": "custom", "name": "no_pointer"}`. References also
+work in optional unions and generic collection arguments. Definitions cannot
+reference other catalog entries. Unknown references and conflicting definitions
+of one name in composed grammars are errors; equal definitions may be shared.
+No consumer imports Python modules or executes serialized callbacks.
+
+Catalog names are public ASCII identifiers, beginning with a letter. Python
+keywords, registry API names (`register`, `validate`, `resolve`, `to_dict`,
+`from_dict`, `toJSON`, `fromJSON`) and Object prototype names are reserved.
+
+All named constraints have **input validation semantics**: check the original
+value, before pointer interpretation/resolution and before exposing reactive
+pointers for subscription. This is fixed by the `custom` descriptor kind; no
+separate validation-stage field is needed in this version. It is not a
+resolved-value contract. Check Source loaded from serialization against its
+owning grammar as well as Source built through helpers. The check is repeated
+before runtime resolution and in explicit Source validation.
+
+For `no_pointer`, leading `^` and `=` are forbidden (`==` is covered by `=`).
+Empty and multiline literal strings remain valid. No global permission change
+is applied to plain string parameters. Handwritten helpers must map argument
+contracts onto the actual Source attribute declaration; annotating only a
+helper's argument does not provide a serialized Source contract.
+
+Regex uses full-string matching. The existing non-portable character-class and
+flag restrictions still apply; the exact idiom `[\s\S]` is additionally supported
+as a universal character class. Neither `\s` nor `\S` is portable individually.
+Word boundaries, backreferences, inline flags, and possessive quantifiers are
+also rejected. JS translates dot and line anchors to Python LF semantics,
+rather than interpreting CR/U+2028/U+2029 as extra line boundaries.
+
+Catalog presence requires 1.2. Catalog omission in 1.2 means an empty registry.
+Existing 1.1 documents remain accepted and cannot carry a catalog. Python export
+uses 1.2 when named types are present and retains 1.1 otherwise. JavaScript
+composition preserves 1.2 when either document uses it, including when a later
+legacy document extends a grammar with registered types. Older readers reject
+1.2 explicitly instead of silently discarding the constraints.
+
 
 ## 5. `sub_tags` / `parent_tags` grammar
 

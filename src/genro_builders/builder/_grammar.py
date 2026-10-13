@@ -438,6 +438,47 @@ class _GrammarMixin:
             f"Add **kwargs to its signature to accept arbitrary attributes."
         )
 
+    def _validate_custom_types(self, node: Any) -> None:
+        """Recheck named input constraints before consuming an existing Source."""
+        from .custom_types import _CustomType, _contains_custom_type
+
+        # The envelope belongs to the host grammar even after the active
+        # builder has switched for the subtree below it.
+        owner = self
+        parent = node.parent_node
+        host = parent.builder if parent is not None else getattr(node.parent_bag, "_builder", None)
+        if host is not None and host is not self:
+            declaration = host._schema.get_node(node.node_tag)
+            if declaration is not None and (declaration.get_attr("_meta") or {}).get("subbuilder"):
+                owner = host
+        # Legacy dynamic nodes have no declaration or named constraints.
+        if owner._schema.get_node(node.node_tag) is None:
+            return
+        info = owner._get_schema_info(node.node_tag)
+        values = dict(node.attr)
+        values["node_value"] = node.value
+        for name, (base, validators, _) in (info.get("call_args_validations") or {}).items():
+            if name not in values:
+                continue
+            checks = [v for v in validators if isinstance(v, _CustomType)]
+            if not checks and not _contains_custom_type(base):
+                continue
+            if values[name] is None:
+                from ._grammar_load import _accepts_none
+
+                signature = info.get("declaration_signature")
+                if (name in (info.get("loaded_nullable_names") or ())
+                        or (signature is not None and name in signature.parameters
+                            and _accepts_none(signature.parameters[name].annotation))):
+                    continue
+            try:
+                if not _check_type(values[name], base, strict_json_primitives=True):
+                    raise TypeError(f"expected {base}")
+                for check in checks:
+                    check(values[name])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{node.node_tag}.{name}: {exc}") from exc
+
     def _validate_call_args(
         self,
         info: dict,

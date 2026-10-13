@@ -31,6 +31,7 @@ project: **genro-ws-web**, built on genro-builders.
   how the lifecycle works, where the data lives.
 - **[Decorators](builders/decorators.md)** — `@element`, `@abstract`,
   sub-builders, and the data-elements.
+- **[Custom types](builders/custom-types.md)** — reusable named constraints shared with JavaScript.
 - **[Components](builders/components.md)** — `@component` and
   `@container`: reusable grammar, the three calling forms.
 - **[Common patterns](builders/patterns.md)** — `._` chaining,
@@ -80,6 +81,7 @@ getting-started
 
 builders/overview
 builders/decorators
+builders/custom-types
 builders/components
 builders/patterns
 ```

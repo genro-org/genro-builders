@@ -16,7 +16,10 @@ from .base import BuilderBase
 from .source_bag import SourceBag, SourceBagNode
 from .target_wrapper import TargetWrapper
 
+from genro_builders.builder.custom_types import CustomTypes
+
 __all__ = [
+    "CustomTypes",
     "BuilderBase",
     "SourceBag",
     "SourceBagNode",
