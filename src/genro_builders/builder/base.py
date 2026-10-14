@@ -243,7 +243,7 @@ class BuilderBase(
                 parent_schema = base._class_schema
                 break
         if parent_schema is not None:
-            cls._class_schema = Bag(source=parent_schema)
+            cls._class_schema = parent_schema.deepcopy()
             # The copy carries the parent's ``_get_schema_info`` cache,
             # resolved against the parent's abstracts; a layer of this
             # class may replace them, so the cache is rebuilt here.
@@ -1079,7 +1079,7 @@ class BuilderBase(
         a same-named plain element (last-wins, like data-elements).
         """
         if self._schema is type(self)._class_schema:
-            self._schema = Bag(source=self._schema)
+            self._schema = self._schema.deepcopy()
             self._schema_tag_names = dict(self._schema_tag_names)
         for mixin in mixins:
             for name, obj in vars(mixin).items():

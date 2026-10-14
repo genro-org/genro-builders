@@ -35,7 +35,7 @@ def test_registered_under_its_name():
 
 
 def test_root_carries_the_class_name(source):
-    assert from_tytx(source.to_tytx())["__cls"] == "SourceBag"
+    assert from_tytx(source.to_tytx().removesuffix("::X"))["__cls"] == "SourceBag"
 
 
 @pytest.mark.parametrize("caller", [Bag, SourceBag])
@@ -57,6 +57,7 @@ def test_generic_tytx_encoder(source):
 
 def test_data_bag_inside_source_stays_a_bag(source):
     source.set_item("payload", Bag({"value": 1}))
-    rows = {row[1]: row[4] for row in from_tytx(source.to_tytx())["rows"]}
+    wire = from_tytx(source.to_tytx().removesuffix("::X"))
+    rows = {row[1]: row[4] for row in wire["rows"]}
     assert rows["payload"]["__cls"] == "Bag"
     assert type(SourceBag.from_tytx(source.to_tytx())["payload"]) is Bag
