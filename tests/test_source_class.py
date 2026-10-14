@@ -112,9 +112,9 @@ def test_new_root_and_expansion_root_use_the_declared_class():
 def test_registered_subclass_survives_the_tytx_wire():
     source = _page().source
     payload = source.to_tytx()
-    assert from_tytx(payload)["__cls"] == "_TestSource"
-    rows = from_tytx(payload)["rows"]
-    assert all("__cls" not in row[4] for row in rows)
+    wire = from_tytx(payload.removesuffix("::X"))
+    assert wire["__cls"] == "_TestSource"
+    assert all("__cls" not in row[4] for row in wire["rows"])
     typed = to_tytx(source)
     assert typed.endswith("::X")
     for result in (from_tytx(typed), SourceBag.from_tytx(payload)):

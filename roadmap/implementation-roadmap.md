@@ -79,11 +79,48 @@ reconstructs a builder class from an exported grammar document — the
 symmetric half, and the precondition of the JS twin consuming the same
 file.
 
-### 2.4 `include_components` (`CMP.6`) — implemented, untested
+### 2.4 `include_components` (`CMP.6`) — authoring works, render raises
 
 Per-instance grammar enrichment from mixins exists
-(`BuilderBase.include_components`) and is documented, but no test
-exercises it. Either cover it or decide it is not part of the surface.
+(`BuilderBase.include_components`) and is documented. `create()` works:
+the component enters the instance grammar and the node is written to the
+source, covered by `tests/test_include_components.py`. `render()`
+raises `AttributeError`.
+
+The two sites were written four days apart and neither knows the other:
+`include_components` (`f6751ad`, 2026-06-06) binds the body on the
+INSTANCE with `setattr(self, name, obj.__get__(self))`, while the
+expansion (`42d4782`, 2026-06-10) reads it from the CLASS in
+`renderer/base.py:210`:
+
+    body = getattr(type(builder), node.node_tag).__get__(builder, type(builder))
+
+A `@component` declared on the class or on a base mixin is in the MRO
+and expands correctly — that is the path the seven `with_data` examples
+take. Only the per-instance one is unreachable from the renderer. The
+defect survived because no line of code calls `include_components`,
+here or in any downstream repository.
+
+Three ways out, none chosen:
+
+- the renderer reads `vars(builder)` first, then the class — two lines,
+  one site, `page.badge` stays the bound body in both cases;
+- `include_components` registers in a named instance map the renderer
+  reads first — the second place gets a declared purpose, at the price
+  of `page.badge` meaning one thing for included components and another
+  for declared ones;
+- the schema entry carries the function and the renderer asks the
+  schema — the only one that leaves a single access point, but it
+  touches `__init_subclass__` and puts function objects inside a Bag
+  that is deepcopied and elsewhere serialized: to be verified, not
+  assumed.
+
+Note that `_pop_decorated_methods` (`_utilities.py:400`) deliberately
+leaves components on the class BECAUSE the renderer looks there. That
+dependency is written down nowhere else and no test protects it.
+
+The third option of the original entry stands: decide `include_components`
+is not part of the surface.
 
 ### 2.5 Cross-runtime
 

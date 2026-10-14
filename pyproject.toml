@@ -35,9 +35,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "genro-bag>=0.27.0",
+    "genro-bag>=0.28.0",
     "genro-tytx>=0.16.2",
-    "genro-toolbox>=0.17.0",
+    "genro-toolbox>=0.18.0",
 ]
 
 [project.optional-dependencies]
