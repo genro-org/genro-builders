@@ -18,9 +18,8 @@ class CustomPage(HtmlBuilder):
         body = root.body()
         # The recipe says gray; the datum carries the exception: red wins.
         body.div("^temperature", color="gray")
-        # Template input: w is consumed by ${w} and never emitted — the
-        # computed datum composes with the authored unit.
-        body.div("sized box", w="^box_width", width="${w}px", border="1px solid")
+        # The explicit suffix appends a unit to the typed Data value.
+        body.div("sized box", width="^box_width:{}px", border="1px solid")
 
 
 if __name__ == "__main__":

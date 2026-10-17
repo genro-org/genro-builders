@@ -56,12 +56,12 @@ def test_formula_bindings_receive_the_raw_datum():
     assert "<div>20</div>" in out
 
 
-def test_mask_composes_with_recipe_templates():
+def test_explicit_template_reads_raw_data_before_presentation():
     class Page(HtmlBuilder):
         def main(self, root) -> None:
             body = root.body()
             body.dataSetter("prezzo", 99, mask="€ %s")
-            body.div("x", p="^prezzo", title="costa ${p}")
+            body.div("x", p="^prezzo", title="^prezzo:costa € {}")
 
     out = _mounted(Page).render(target=False)
     assert 'title="costa € 99"' in out

@@ -32,6 +32,7 @@ project: **genro-ws-web**, built on genro-builders.
 - **[Decorators](builders/decorators.md)** — `@element`, `@abstract`,
   sub-builders, and the data-elements.
 - **[Custom types](builders/custom-types.md)** — reusable named constraints shared with JavaScript.
+- **[Pointer suffixes and dtype migration](builders/pointer-suffixes.md)** — explicit transforms and portable type identities.
 - **[Components](builders/components.md)** — `@component` and
   `@container`: reusable grammar, the three calling forms.
 - **[Common patterns](builders/patterns.md)** — `._` chaining,
@@ -82,6 +83,7 @@ getting-started
 builders/overview
 builders/decorators
 builders/custom-types
+builders/pointer-suffixes
 builders/components
 builders/patterns
 ```

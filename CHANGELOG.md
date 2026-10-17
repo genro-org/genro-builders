@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.29.0 — 2026-10-17
+
+- Support portable TYTX dtype annotations, retaining registered type identity,
+  strict scalar validation and nullability through nested signatures.
+- Add explicit pointer suffix templates (`:`) and typed expression slots (`:=`).
+  Static output leaves expressions inert; JS consumers provide the compiler hook.
+- BREAKING: ordinary `${name}` attribute text stays literal and no longer consumes
+  helper attributes. Migrate `width="${w}px", w="^width"` to `width="^width:{}px"`.
+- Expose suffix dependency discovery; preserve referenced attributes and authored
+  Source. Strip suffixes from lookup/subscription paths and retain symbolic
+  attribute selectors. Grammar collection-key templates stay supported.
+- Gramlot adoption, compiler integration and downstream publication remain a
+  separate consumer task. See the pointer-suffix migration guide.
+
+
 ## 0.28.0 — 2026-10-13
 
 - Add `CustomTypes.register(name, type, annotation)` and named aliases in signatures.

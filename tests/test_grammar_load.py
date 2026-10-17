@@ -9,6 +9,9 @@ cycle, ``parent_tags`` names are identifiers without duplicates.
 
 from __future__ import annotations
 
+from datetime import date, datetime, time
+from decimal import Decimal
+
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -333,3 +336,81 @@ def test_valid_sub_tags_cardinality_is_accepted(tmp_path: Path) -> None:
     document = _document()
     document["elements"]["catalog"]["sub_tags"] = "item[1:3],note[2],extra[:4],more[0:]"
     assert "catalog" in _builder_class(tmp_path, document)()
+
+
+@pytest.mark.parametrize(("dtype", "value"), [
+    ("T", "hello"), ("L", 12), ("R", 12.5), ("B", True),
+    ("D", date(2026, 10, 16)),
+    ("H", time(9, 30)),
+    ("N", Decimal('9007199254740993.25')),
+])
+def test_tytx_dtype_signature_loads_without_coercing(tmp_path, dtype, value):
+    doc = _document()
+    doc['elements']['catalog']['collection_key'] = None
+    param = _item_parameter(doc, 0)
+    param['annotation'] = {'kind': 'dtype', 'dtype': dtype}
+    cls = _builder_class(tmp_path, doc, 'typed')
+    b = cls()
+    node = b.new_root().catalog().item(sku=value)
+    assert node.attr['sku'] == value
+    assert type(node.attr['sku']) is type(value)
+
+
+def test_unknown_dtype_is_rejected(tmp_path):
+    doc = _document()
+    _item_parameter(doc, 0)['annotation'] = {'kind': 'dtype', 'dtype': 'unknown'}
+    with pytest.raises(ValueError, match='unknown dtype'):
+        _builder_class(tmp_path, doc, 'bad_dtype')
+
+
+@pytest.mark.parametrize('desc', [
+    {'kind': 'dtype'}, {'kind': 'dtype', 'dtype': 1},
+    {'kind': 'dtype', 'dtype': 'N', 'extra': True},
+    {'kind': 'dtype', 'dtype': ''}, {'kind': 'dtype', 'dtype': 'toString'},
+])
+def test_malformed_dtype_is_rejected(tmp_path, desc):
+    doc = _document()
+    _item_parameter(doc, 0)['annotation'] = desc
+    with pytest.raises(ValueError, match='dtype'):
+        _builder_class(tmp_path, doc, 'bad_dtype')
+
+
+@pytest.mark.parametrize(('code', 'invalid'), [
+    ('L', True), ('L', 1.5), ('R', True), ('R', float('inf')),
+    ('R', Decimal('1.2')),
+    ('N', Decimal('NaN')),
+    ('N', Decimal('Infinity')), ('N', 1.2),
+    ('D', datetime(2026,10,16)), ('H','09:30'),
+    ('DHZ', date(2026,10,16)), ('NN', 0),
+])
+@pytest.mark.parametrize('nested', ['direct', 'union', 'list'])
+def test_dtype_domains_remain_strict_when_nested(tmp_path, code, invalid, nested):
+    desc = {'kind':'dtype', 'dtype':code}
+    if nested == 'union':
+        desc = {'kind':'union', 'items':[desc, {'kind':'dtype','dtype':'NN'}]}
+    elif nested == 'list':
+        desc = {'kind':'generic', 'origin':{'kind':'type','module':'builtins','name':'list'}, 'arguments':[desc]}
+        invalid = [invalid]
+    doc = _document()
+    doc['elements']['catalog']['collection_key'] = None
+    _item_parameter(doc,0)['annotation'] = desc
+    b = _builder_class(tmp_path,doc,'invalid_dtype')()
+    with pytest.raises((TypeError,ValueError)):
+        b.new_root().catalog().item(sku=invalid)
+
+
+def test_dtype_nullable_and_registered_class_roundtrip(tmp_path):
+    from genro_bag import Bag
+    from genro_builders.builder._grammar_load import _annotation
+    from genro_builders.builder._grammar_export import _annotation_form
+    from genro_builders.builder._utilities import _check_type
+    for code, value in [('X', Bag()), ('DH', datetime(2026,10,16)), ('NN',None)]:
+        desc={'kind':'dtype','dtype':code}
+        annotation = _annotation(desc,'test')
+        assert _annotation_form(annotation,'test') == desc
+        assert _check_type(value,annotation)
+    doc=_document()
+    doc['elements']['catalog']['collection_key']=None
+    _item_parameter(doc,0)['annotation']={'kind':'union','items':[{'kind':'dtype','dtype':'D'}, {'kind':'dtype','dtype':'NN'}]}
+    b=_builder_class(tmp_path,doc,'nullable_dtype')()
+    b.new_root().catalog().item(sku=None)

@@ -3,7 +3,7 @@
 
 CSS rides the universal walk on ``RendererBase`` like every other
 dialect: each node's ``runtime_values`` is resolved (pointers ``^``/
-``=`` and ``${}`` templates actualized, keyword names like ``class_``
+``=`` and explicit pointer suffixes actualized, keyword names like ``class_``
 normalized), then ``rendered_item`` turns the node into a small
 **dict fragment** describing what it is (``kind`` = selector / rule /
 cssvar / importcss / selectorList / stylesheet). The walk stacks

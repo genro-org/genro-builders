@@ -1,0 +1,188 @@
+[
+  {
+    "name": "number",
+    "data": {
+      "v": 38
+    },
+    "attrs": {
+      "width": "^v:{}px"
+    },
+    "expected": {
+      "width": "38px"
+    }
+  },
+  {
+    "name": "float integer",
+    "data": {
+      "v": 1.0
+    },
+    "attrs": {
+      "title": "=v:{}"
+    },
+    "expected": {
+      "title": "1"
+    }
+  },
+  {
+    "name": "zero false",
+    "data": {
+      "v": 0,
+      "b": false
+    },
+    "attrs": {
+      "width": "^v:{}px",
+      "flag": "^b:{}"
+    },
+    "expected": {
+      "width": "0px",
+      "flag": "false"
+    }
+  },
+  {
+    "name": "named chain",
+    "data": {
+      "v": 4,
+      "other": 5
+    },
+    "attrs": {
+      "width": "^v:{}px",
+      "height": "^other:{width}: {}px"
+    },
+    "expected": {
+      "width": "4px",
+      "height": "4px: 5px"
+    }
+  },
+  {
+    "name": "null",
+    "data": {
+      "v": null
+    },
+    "attrs": {
+      "title": "^v:constant",
+      "optional": "^v:{?}"
+    },
+    "expected": {
+      "title": null,
+      "optional": null
+    }
+  },
+  {
+    "name": "empty",
+    "data": {
+      "v": ""
+    },
+    "attrs": {
+      "title": "^v:Customer: {}",
+      "optional": "^v:Customer: {?}"
+    },
+    "expected": {
+      "title": null,
+      "optional": "Customer: "
+    }
+  },
+  {
+    "name": "named empty",
+    "data": {
+      "v": 3
+    },
+    "attrs": {
+      "empty": "",
+      "title": "^v:{empty}",
+      "optional": "^v:{?empty}{}"
+    },
+    "expected": {
+      "empty": "",
+      "title": null,
+      "optional": "3"
+    }
+  },
+  {
+    "name": "named null",
+    "data": {
+      "v": 3
+    },
+    "attrs": {
+      "empty": "=missing",
+      "title": "^v:{?empty}{}"
+    },
+    "expected": {
+      "empty": null,
+      "title": null
+    }
+  },
+  {
+    "name": "literal",
+    "data": {
+      "v": "^other",
+      "other": 9
+    },
+    "attrs": {
+      "title": "${missing}",
+      "name": "Mario",
+      "copy": "^v:{}",
+      "raw": "^v"
+    },
+    "expected": {
+      "title": "${missing}",
+      "name": "Mario",
+      "copy": "^other",
+      "raw": "^other"
+    }
+  },
+  {
+    "name": "static expression",
+    "data": {
+      "v": false
+    },
+    "attrs": {
+      "title": "^v:=!{}",
+      "legacy": "==1+2"
+    },
+    "expected": {
+      "title": null,
+      "legacy": null
+    }
+  },
+  {
+    "name": "missing",
+    "data": {
+      "v": null
+    },
+    "attrs": {
+      "title": "^v:{missing}"
+    },
+    "error": "does not exist"
+  },
+  {
+    "name": "cycle",
+    "data": {
+      "v": 3
+    },
+    "attrs": {
+      "a": "^v:{b}",
+      "b": "^v:{a}"
+    },
+    "error": "Cyclic"
+  },
+  {
+    "name": "invalid slot",
+    "data": {
+      "v": 1
+    },
+    "attrs": {
+      "title": "^v:{bad-name}"
+    },
+    "error": "Invalid pointer template"
+  },
+  {
+    "name": "optional expression",
+    "data": {
+      "v": 1
+    },
+    "attrs": {
+      "title": "^v:={?}"
+    },
+    "error": "Optional slots"
+  }
+]

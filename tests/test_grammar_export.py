@@ -381,3 +381,13 @@ def test_custom_callable_validator_is_not_silently_dropped(tmp_path):
 
     with pytest.raises(TypeError, match="portable validator"):
         _dump(Dialect, tmp_path)
+
+
+def test_domain_annotations_export_portable_tytx_dtypes():
+    from datetime import date, datetime, time
+    from decimal import Decimal
+    from genro_builders.builder._grammar_export import _annotation_form
+    # Built-in primitives retain the existing descriptor; registered domain
+    # classes cross language boundaries through their TYTX identity.
+    for cls, code in ((date, "D"), (time, "H"), (datetime, "DHZ"), (Decimal, "N")):
+        assert _annotation_form(cls, 'test') == {"kind": "dtype", "dtype": code}

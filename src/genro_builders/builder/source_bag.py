@@ -25,6 +25,8 @@ from typing import Any
 from genro_bag import Bag, BagNode
 from genro_tytx import get_subtype_dict, set_subtype_dict
 
+from .pointers import pointer_transform
+
 
 def _schema_tag(builder: Any, name: str) -> str | None:
     """Resolve ``name`` to a schema tag, honoring the dialect prefix.
@@ -174,18 +176,18 @@ class _SourceBagNodeMixin:
         """
         self.builder._validate_custom_types(self)
         result: list[tuple[str, str]] = [
-            (attrname, v)
+            (attrname, v.split(":", 1)[0])
             for attrname, v in self.attr.items()
             if self.pointer_type(v) == "^"
         ]
         value = self.value
         if self.pointer_type(value) == "^":
-            result.append(("", value))
+            result.append(("", value.split(":", 1)[0]))
         return result
 
     def pointer_type(self, v: Any) -> str | None:
         """Return ``"^"`` (reactive), ``"="`` (passive) or ``None``."""
-        if isinstance(v, str) and v[:1] in ("^", "="):
+        if isinstance(v, str) and v[:1] in ("^", "=") and not v.startswith("=="):
             return v[0]
         return None
 
@@ -260,14 +262,15 @@ class _SourceBagNodeMixin:
         """
         raw = path
         if self.pointer_type(path):
-            path = path[1:]
+            transform = pointer_transform(path)
+            path = (transform[0] if transform else path)[1:]
 
         attr: str | None = None
         if "?" in path:
             path, attr = path.split("?", 1)
 
         if path.startswith("#"):
-            return self._resolve_symbolic_datapath(path, raw)
+            return self._finalize_abs_path(self._resolve_symbolic_datapath(path, raw), attr)
 
         if path.startswith("."):
             path = self._compose_relative_datapath(path, raw)
