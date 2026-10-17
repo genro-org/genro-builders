@@ -25,6 +25,8 @@ import types
 from collections.abc import Callable
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
+from genro_tytx import TYPE_REGISTRY
+
 from ._utilities import SIGNATURE_SKIP_PARAMS
 from ._validators import Range, Regex
 
@@ -108,8 +110,18 @@ def _annotation_form(annotation: Any, path: str, custom_types: dict | None = Non
     if annotation is Ellipsis:
         return {"kind": "ellipsis"}
     from .custom_types import _CustomType
+    from ._dtype import _DType
 
     origin, args = get_origin(annotation), get_args(annotation)
+    if origin is Annotated and any(isinstance(item, _DType) for item in args[1:]):
+        dtype = next(item for item in args[1:] if isinstance(item, _DType))
+        remaining = [item for item in args[1:] if not isinstance(item, _DType)]
+        base = {"kind": "dtype", "dtype": dtype.code}
+        if not remaining:
+            return base
+        result = _annotation_form(Annotated[args[0], *remaining], path, custom_types)
+        result["base"] = base
+        return result
     if origin is Annotated:
         registered = [item for item in args[1:] if isinstance(item, _CustomType)]
         if registered:
@@ -149,6 +161,10 @@ def _annotation_form(annotation: Any, path: str, custom_types: dict | None = Non
     if origin is not None:
         return {"kind": "generic", "origin": _annotation_form(origin, path, custom_types),
                 "arguments": [_annotation_form(a, path, custom_types) for a in args]}
+    # Domain types use the shared wire vocabulary. Existing primitive grammar
+    # descriptors remain readable; component exporters also emit dtype for them.
+    if isinstance(annotation, type) and annotation not in (str, int, float, bool, type(None)) and annotation in TYPE_REGISTRY:
+        return {"kind": "dtype", "dtype": TYPE_REGISTRY[annotation][0]}
     if isinstance(annotation, type) and "<locals>" not in annotation.__qualname__:
         return {"kind": "type", "module": annotation.__module__, "name": annotation.__qualname__}
     raise TypeError(f"{path}: unsupported annotation {annotation!r}")

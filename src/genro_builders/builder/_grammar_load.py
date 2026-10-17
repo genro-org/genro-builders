@@ -29,10 +29,13 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any, Literal, NoReturn, Union, get_args, get_origin
 
+from genro_tytx import SUFFIX_TO_TYPE
+
 from ._grammar_export import CUSTOM_TYPES_FORMAT_VERSION, FORMAT_NAME, FORMAT_VERSION
 from ._utilities import SIGNATURE_SKIP_PARAMS, _parse_sub_tags_spec, _split_annotated
 from ._validators import Range, Regex
 from .custom_types import CustomTypes, _CustomType
+from ._dtype import _DType
 
 _ABSTRACT_KEYS = ("doc", "sub_tags", "parent_tags", "inherits_from", "ns", "attributes", "_meta")
 _ELEMENT_KEYS = _ABSTRACT_KEYS + ("node_label", "collection_key")
@@ -165,6 +168,13 @@ def _annotation(desc: Any, path: str, custom_types: Any = None) -> Any:
         return Any
     if kind == "ellipsis":
         return Ellipsis
+    if kind == "dtype":
+        if set(item) != {"kind", "dtype"} or type(item["dtype"]) is not str:
+            _fail(path, "dtype requires a string code")
+        entry = SUFFIX_TO_TYPE.get(item["dtype"])
+        if entry is None:
+            _fail(path, f"unknown dtype {item['dtype']!r}")
+        return Annotated[entry[0], _DType(item["dtype"], entry[0])]
     if kind == "type":
         key = (item.get("module"), item.get("name"))
         if key not in _SAFE_TYPES:

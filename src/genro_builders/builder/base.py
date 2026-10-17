@@ -25,7 +25,6 @@ from __future__ import annotations
 import contextlib
 import inspect
 import json
-import re
 from abc import ABC
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -49,9 +48,8 @@ from ._utilities import (
 from .source_bag import SourceBag
 from .custom_types import _check_custom_type_names
 from .target_wrapper import TargetWrapper
+from .pointers import pointer_transform, pointer_dependencies, resolve_pointer_items
 
-# Template token spotted by ``runtime_values`` for ``${name}`` placeholders.
-_TEMPLATE_RE = re.compile(r"(\\)?\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
 
 #: Structural key of the source wrapper. It exists only so the source is
 #: a tree, not a forest; it is NOT an address. Paths that travel outside
@@ -758,7 +756,7 @@ class BuilderBase(
     def _bindings(self, node: Any) -> dict[str, Any]:
         """Resolve a data-element node's bindings via ``runtime_values``.
 
-        ``runtime_values`` resolves ``^``/``=`` and ``${}``; here we strip
+        ``runtime_values`` resolves ``^``/``=`` and explicit suffixes; here we strip
         the element's own schema fields (``destination`` / ``func`` /
         ``value``), so what remains are the func bindings.
         """
@@ -810,98 +808,51 @@ class BuilderBase(
         )
 
     def runtime_values(self, node: Any) -> tuple[Any, dict[str, Any]]:
-        """Resolve the pointers/templates/resolvers carried by ``node``.
+        """Resolve typed pointers, explicit attribute suffixes and resolvers.
 
-        Returns ``(runtime_value, runtime_attrs)``. Resolution lives on
-        the builder, which owns the datastore; ``node`` is just the subject
-        whose pointers are resolved. ``^``/``=`` strings are read from
-        ``self.data`` at the node's absolute path; ``${name}`` templates
-        expand only inside attributes, against the resolved attrs. A preceding
-        backslash protects a token and is removed. Node values are not templates.
-        Data elements carry code, not presentation: their attributes are never
-        templates (a controller script uses ``${...}`` as JavaScript). A name
-        that is not a resolved attribute raises ``ValueError``.
-
-        A ``BagResolver`` found as the node value or in an attribute is
-        CALLED, and its result is the resolved datum: a resolver supplies
-        a value in place, so the recipe declares it where the value lives
-        instead of pairing a datastore entry with a pointer. It needs no
-        node of its own — caching and TTL live in the resolver.
-
-        ``^`` and ``=`` resolve identically here: the difference is an
-        author's declaration of INTENT (``^`` "this is meant to follow the
-        datum"), which a reactive engine would act on. A static render
-        reads both, once.
-
-        An attribute referenced by a ``${...}`` template of the same node
-        is a template input: once expanded it has been consumed, and it is
-        dropped from the returned attrs — no renderer emits it. The name
-        is free (``w``, ``foo``); it is the usage, visible in the recipe,
-        that marks it. Canonical idiom for "computed datum + authored
-        unit": ``div(w="^mywidth", width="${w}px")``. An attribute meant
-        to be BOTH emitted and reused goes through a template itself:
-        ``t="hello", title="${t}", aria_label="${t} world"``.
+        ``:`` composes text; ``:=`` is inert in static Python output. Ordinary
+        ``${name}`` text stays literal. References retain their own attributes.
+        A fresh graph is built each time; Source and Data are never rewritten.
+        Data masks still apply to ordinary pointers, after suffixes have read
+        the raw typed inputs. Resolvers supply values without a second lookup.
         """
         node.builder._validate_custom_types(node)
         is_data_element = bool(node._get_meta("data_element"))
-        resolved: dict[Any, Any] = {}
+        current: dict[Any, Any] = {}
+        presented: dict[Any, Any] = {}
         carried: dict[str, Any] = {}
-        for k, v in node.runtime_to_evaluate().items():
+        items = node.runtime_to_evaluate()
+        projected = set(items)
+        source_attrs = dict(node.attr)
+        source_attrs.update(node.fixed_attr_items())
+        for key, raw in tuple(items.items()):
+            if not isinstance(key, str) or not pointer_transform(raw):
+                continue
+            for name in pointer_dependencies(node, raw):
+                if name not in items:
+                    items[name] = source_attrs[name]
+        for k, v in items.items():
             if isinstance(v, BagResolver):
-                # A resolver SUPPLIES the value, wherever it sits: as the
-                # node value (key ``None``) or in an attribute. Calling it
-                # IS the resolution — caching and TTL live in the resolver,
-                # which works with no node of its own.
-                resolved[k] = v()
+                current[k] = v()
                 continue
-            ptype = node.pointer_type(v)
-            if not ptype:
-                resolved[k] = v
+            transform = pointer_transform(v) if isinstance(k, str) else None
+            pointer = transform[0] if transform else v
+            if not node.pointer_type(pointer):
+                current[k] = None if isinstance(k, str) and isinstance(v, str) and v.startswith("==") else v
                 continue
-            abs_path = node.abs_datapath(v)
+            abs_path = node.abs_datapath(pointer)
             value = self.data.get_item(abs_path)
-            # The datum knows how to present itself. Presentation only:
-            # never for a data-element's bindings (formulas want the raw
-            # datum) and never for ``?attr`` reads (raw by definition).
-            # - ``mask`` wraps the value (legacy gnrformatter vocabulary,
-            #   ``%s`` = the value);
-            # - ``_wdg`` (value reads only) is a dict of attributes the
-            #   datum carries onto its reader — the exception that
-            #   travels with the data (e.g. an alarm color).
-            if not is_data_element and "?" not in abs_path:
+            current[k] = value
+            if not is_data_element and "?" not in abs_path and not transform:
                 data_node = self.data.get_node(abs_path)
                 if data_node is not None:
-                    value = self._present_value(data_node, value)
+                    presented[k] = self._present_value(data_node, value)
                     if k is None:
-                        wdg = data_node.attr.get("_wdg")
-                        if wdg:
-                            carried.update(wdg)
-            resolved[k] = value
-
-        consumed: set[str] = set()
-
-        def _expand(s: str) -> str:
-            def repl(m: re.Match[str]) -> str:
-                if m.group(1):
-                    return m.group(0)[1:]
-                name = m.group(2)
-                if name not in resolved:
-                    raise ValueError(f"Unknown template parameter '{name}'")
-                consumed.add(name)
-                val = resolved[name]
-                return "" if val is None else str(val)
-            return _TEMPLATE_RE.sub(repl, s)
-
-        for k, v in resolved.items():
-            if is_data_element or k is None:
-                continue
-            if isinstance(v, str) and "${" in v:
-                resolved[k] = _expand(v)
-
+                        carried.update(data_node.attr.get("_wdg") or {})
+        resolved = resolve_pointer_items(items, current)
+        resolved.update(presented)
+        resolved = {key: value for key, value in resolved.items() if key in projected}
         runtime_value: Any = resolved.pop(None)
-        # Template inputs were consumed by the expansion above; they are
-        # not part of the node's runtime attrs.
-        resolved = {k: v for k, v in resolved.items() if k not in consumed}
         # ``_wdg`` attributes carried by the datum override the recipe's:
         # what travels with the data is the exception, and the exception
         # wins over the static default.

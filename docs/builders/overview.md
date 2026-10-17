@@ -182,10 +182,9 @@ This separation is fixed by the architecture contract (areas
 
 Already implemented:
 
-- **Pull-based binding** — `^pointer` / `=pointer` / `${name}` resolved
+- **Pull-based binding** — `^pointer` / `=pointer` / explicit `:` suffixes resolved
   at render time, with read-time pointer registration (`DAT.2`); data
-  presentation via `mask`/`_wdg` (`DAT.5`); consumed template inputs
-  (`DAT.6`).
+  presentation via `mask`/`_wdg` (`DAT.5`); named inputs remain independently projected. See [migration](pointer-suffixes.md).
 - **Data-elements** — `dataSetter`, `dataFormula`, `dataController`
   (plain `@element` marked as data). All three compute during `create()`,
   once, in document order: see [Decorators](decorators.md).

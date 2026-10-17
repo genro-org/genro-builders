@@ -1,0 +1,281 @@
+{
+  "document_format": {
+    "name": "builder_grammar",
+    "version": "1.1"
+  },
+  "grammar": {
+    "name": "dtype_contract",
+    "version": null,
+    "title": null,
+    "description": null
+  },
+  "abstracts": {},
+  "elements": {
+    "dataSetter": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "destination",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "type",
+              "module": "builtins",
+              "name": "str"
+            },
+            "has_default": false
+          },
+          {
+            "name": "value",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "any"
+            },
+            "has_default": false
+          },
+          {
+            "name": "attr",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "any"
+            },
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "dataFormula": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "destination",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "type",
+              "module": "builtins",
+              "name": "str"
+            },
+            "has_default": false
+          },
+          {
+            "name": "func",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "str"
+                },
+                {
+                  "kind": "type",
+                  "module": "collections.abc",
+                  "name": "Callable"
+                }
+              ]
+            },
+            "has_default": false
+          },
+          {
+            "name": "kwargs",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": null,
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "dataController": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "func",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "str"
+                },
+                {
+                  "kind": "type",
+                  "module": "collections.abc",
+                  "name": "Callable"
+                }
+              ]
+            },
+            "has_default": false
+          },
+          {
+            "name": "kwargs",
+            "kind": "var_keyword",
+            "role": "attribute",
+            "annotation": null,
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": true,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": {
+        "data_element": true
+      }
+    },
+    "typed": {
+      "doc": null,
+      "sub_tags": "",
+      "parent_tags": null,
+      "inherits_from": null,
+      "ns": null,
+      "attributes": {
+        "parameters": [
+          {
+            "name": "day",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "D"
+            },
+            "has_default": false
+          },
+          {
+            "name": "clock",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "H"
+            },
+            "has_default": false
+          },
+          {
+            "name": "stamp",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "DHZ"
+            },
+            "has_default": false
+          },
+          {
+            "name": "amount",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "N"
+            },
+            "has_default": false
+          },
+          {
+            "name": "payload",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "RAW"
+            },
+            "has_default": false
+          },
+          {
+            "name": "data",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "dtype",
+              "dtype": "X"
+            },
+            "has_default": false
+          },
+          {
+            "name": "optional",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "union",
+              "items": [
+                {
+                  "kind": "dtype",
+                  "dtype": "D"
+                },
+                {
+                  "kind": "type",
+                  "module": "builtins",
+                  "name": "NoneType"
+                }
+              ]
+            },
+            "has_default": false
+          },
+          {
+            "name": "dates",
+            "kind": "positional_or_keyword",
+            "role": "attribute",
+            "annotation": {
+              "kind": "generic",
+              "origin": {
+                "kind": "type",
+                "module": "builtins",
+                "name": "list"
+              },
+              "arguments": [
+                {
+                  "kind": "dtype",
+                  "dtype": "D"
+                }
+              ]
+            },
+            "has_default": false
+          }
+        ],
+        "accepts_var_keyword": false,
+        "accepts_var_positional": false
+      },
+      "node_label": null,
+      "collection_key": null,
+      "_meta": null
+    }
+  }
+}

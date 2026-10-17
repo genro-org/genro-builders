@@ -1,14 +1,6 @@
 # Copyright 2025 Softwell S.r.l. - SPDX-License-Identifier: Apache-2.0
-"""Template inputs: an attribute referenced by a ``${...}`` template of
-the same node is consumed by the expansion and is not emitted.
-
-The name is free — it is the usage, visible in the recipe, that marks
-the attribute as a template input. Canonical idiom: a computed datum
-composed with an authored unit (``w="^mywidth", width="${w}px"``).
-"""
+"""Explicit suffix templates preserve Source and independently projected attributes."""
 from __future__ import annotations
-
-import pytest
 
 from genro_builders.contrib.html import HtmlBuilder
 
@@ -23,25 +15,25 @@ def _render(main_fn):
     return page.render(target=False)
 
 
-def test_template_input_is_consumed_not_emitted():
+def test_explicit_template_formats_the_leading_pointer():
     def main(root):
         body = root.body()
         body.dataSetter("mywidth", 120)
-        body.div("testo", w="^mywidth", width="${w}px")
+        body.div("testo", width="^mywidth:{}px")
 
     out = _render(main)
     assert '<div style="width: 120px">testo</div>' in out
     assert "w=" not in out
 
 
-def test_dual_use_goes_through_a_template_itself():
+def test_old_templates_are_literal_and_keep_attributes():
     def main(root):
         root.div("x", t="hello", title="${t}", aria_label="${t} world")
 
     out = _render(main)
-    assert 'title="hello"' in out
-    assert 'aria-label="hello world"' in out or 'aria_label="hello world"' in out
-    assert " t=" not in out
+    assert 'title="${t}"' in out
+    assert 'aria-label="${t} world"' in out or 'aria_label="${t} world"' in out
+    assert ' t="hello"' in out
 
 
 def test_value_is_literal_and_does_not_consume_attributes():
@@ -57,8 +49,8 @@ def test_value_is_literal_and_does_not_consume_attributes():
 
 def test_escaped_attribute_template_is_literal_and_does_not_consume():
     out = _render(lambda root: root.div(title=r"\${missing} ${name}", name="Mario"))
-    assert 'title="${missing} Mario"' in out
-    assert " name=" not in out
+    assert r'title="\${missing} ${name}"' in out
+    assert ' name="Mario"' in out
 
 
 def test_raw_html_suffix_and_script_preserve_node_templates():
@@ -94,6 +86,5 @@ def test_data_element_attributes_are_not_templates():
     assert page.data.get_item("msg") == "`Total: ${total}` ${stamp}|42"
 
 
-def test_missing_template_name_raises_the_js_message():
-    with pytest.raises(ValueError, match="Unknown template parameter 'missing'"):
-        _render(lambda root: root.div(title="${missing}"))
+def test_old_template_with_missing_name_is_literal():
+    assert 'title="${missing}"' in _render(lambda root: root.div(title="${missing}"))

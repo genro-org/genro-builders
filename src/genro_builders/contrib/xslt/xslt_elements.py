@@ -27,7 +27,7 @@ tags stay ``xslt:output``/``xslt:template``, from ``render_tag``).
 
 Attribute names like ``select``/``match``/``test`` are XPath and are
 emitted verbatim. ``{...}`` attribute-value-templates pass through too
-(only ``${...}`` is a builder template, only ``^``/``=`` a pointer).
+(only ``^``/``=`` introduce pointers; suffixes explicitly format them).
 """
 
 from __future__ import annotations
