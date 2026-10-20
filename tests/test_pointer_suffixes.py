@@ -31,7 +31,7 @@ def test_paths_dependencies_and_rebinding():
     b = HtmlBuilder()
     b.data.set_item('record.w', 7, unit='px')
     b.data['record.h'] = 8
-    parent = b.source.div(datapath='record', node_id='anchor')
+    parent = b.source.div(datapath='record', nodeId='anchor')
     node = parent.div(width='^.w:{}px', height='^#anchor.h:{width}:{}', unit='=.w?unit:{}')
     assert node.abs_datapath('^#anchor.w?unit:Unit: {}') == 'record.w?unit'
     assert node.abs_datapath('^.child.#parent.w:{}') == 'record.w'
@@ -78,5 +78,5 @@ def test_static_expressions_keep_source_and_scan_only_code():
 def test_named_source_metadata_is_read_without_projecting_it():
     b = HtmlBuilder()
     b.data['v'] = 3
-    node = b.source.div(node_id='ref', title='^v:{node_id}:{}')
+    node = b.source.div(nodeId='ref', title='^v:{nodeId}:{}')
     assert b.runtime_values(node)[1] == {'title':'ref:3'}

@@ -24,7 +24,7 @@ resolve against the SVG schema — the same behaviour you get with
 
 Element creation has two entry points — a node (`body.div(...)`) and
 a bag (`root.div(...)`) — and both must apply the same grammar
-semantics: sub-builder switch, data-element field mapping, `node_id`
+semantics: sub-builder switch, data-element field mapping, `nodeId`
 uniqueness. This page exercises the bag entry point on the sub-builder
 case; it fails if the two paths ever diverge again.
 

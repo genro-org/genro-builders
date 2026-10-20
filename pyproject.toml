@@ -36,7 +36,7 @@ classifiers = [
 ]
 dependencies = [
     "genro-bag>=0.28.0",
-    "genro-tytx>=0.16.2",
+    "genro-tytx>=0.16.3",
     "genro-toolbox>=0.18.0",
 ]
 
