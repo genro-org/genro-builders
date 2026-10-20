@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.30.0 — 2026-10-20
+
+- BREAKING: Source identity uses `nodeId` in both Python and JavaScript. Update
+  declarations, attribute reads/writes and named metadata templates together.
+- Preserve identity lookup, duplicate detection, symbolic paths and the separation
+  from DOM `id`; identity metadata is not rendered into markup.
+- No `node_id` alias or serialized-Source conversion. Regenerate saved Source
+  and upgrade producing/consuming applications together.
+- Keep `node_label`, `node_position`, `target_id` and language-specific method
+  names unchanged. Require the verified TYTX 0.16.3 release.
+
 ## 0.29.0 — 2026-10-17
 
 - Support portable TYTX dtype annotations, retaining registered type identity,

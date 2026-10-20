@@ -1,5 +1,7 @@
 # genro-builders
 
+Current release: **0.30.0**.
+
 Builder system for [genro-bag](https://github.com/genropy/genro-bag) —
 domain-specific grammars, rendering, and runtime data binding via
 pointers, built on top of bag data structures.
