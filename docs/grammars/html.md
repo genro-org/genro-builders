@@ -131,7 +131,7 @@ Mode-specific kwargs available at `page.render(...)`:
 
 The `xml` mode is inherited from `BuilderBase.renderer_xml`. It is a
 real render — it rides the universal walk, so pointers are resolved and
-framework markers (`node_id`, …) are filtered out, exactly like the
+framework markers (`nodeId`, …) are filtered out, exactly like the
 `html` render. For the raw structural view of the source (markers and
 unresolved pointers shown verbatim) call `page.source.to_xml()` on
 the bag directly: that is a different thing from `render(mode="xml")`.

@@ -34,8 +34,8 @@ class Page(HtmlBuilder):
 
     def main(self, root) -> None:
         body = root.body()
-        body.div("^title", node_id="title")
-        body.svg(width=10).rect(node_id="shape", fill="^fill")
+        body.div("^title", nodeId="title")
+        body.svg(width=10).rect(nodeId="shape", fill="^fill")
 
 
 # ---------------------------------------------------------------------------

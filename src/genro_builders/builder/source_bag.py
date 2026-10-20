@@ -143,12 +143,12 @@ class _SourceBagNodeMixin:
         return self.parent_bag.root._builder
 
     def _check_unique_id(self, node_id: Any) -> None:
-        """Raise ValueError if ``node_id`` is already taken in the
-        document. No-op when ``node_id`` is None.
+        """Raise ValueError if ``nodeId`` is already taken in the
+        document. No-op when ``nodeId`` is None.
 
         Called before adding a child, so the candidate id is checked
         against the existing tree only. Uniqueness is guaranteed by the
-        ROOT builder: one node_id namespace per document, sub-builder
+        ROOT builder: one nodeId namespace per document, sub-builder
         subtrees included (the page-level ``node_by_id`` lookup and the
         symbolic pointers cross dialect boundaries, so the practical
         identity space is the document).
@@ -165,7 +165,7 @@ class _SourceBagNodeMixin:
             builder.node_by_id(node_id)
         except KeyError:
             return
-        raise ValueError(f"Duplicate node_id '{node_id}'.")
+        raise ValueError(f"Duplicate nodeId '{node_id}'.")
 
     def pointers(self) -> list[tuple[str, str]]:
         """Return the pointers carried by this node as ``(attrname, pointer)``.
@@ -255,8 +255,8 @@ class _SourceBagNodeMixin:
             ``#ANCHOR.x``           — relative to the nearest ancestor
                                        with attr ``_anchor`` present;
                                        ``KeyError`` otherwise
-            ``#<node_id>.x``        — relative to the node carrying that
-                                       ``node_id`` (any other ``#xxx``
+            ``#<nodeId>.x``        — relative to the node carrying that
+                                       ``nodeId`` (any other ``#xxx``
                                        falls in here); ``KeyError`` if
                                        no node carries that id
         """
@@ -340,7 +340,7 @@ class _SourceBagNodeMixin:
                               OR ``form=True``;
             ``#ANCHOR``     — nearest ancestor with attr ``_anchor``
                               present (any value);
-            ``#<id>``       — node carrying that ``node_id`` (any other
+            ``#<id>``       — node carrying that ``nodeId`` (any other
                               ``#xxx`` falls in here).
 
         The matching ancestor / node is then used as starting point for
@@ -411,7 +411,7 @@ class _SourceBagNodeMixin:
         ``path`` is composed via :meth:`abs_datapath` into an absolute
         path on :attr:`data`; it accepts the same syntactic forms
         (absolute, relative ``.x``, ``#FORM``, ``#ANCHOR``,
-        ``#<node_id>``, with or without the ``^``/``=`` prefix).
+        ``#<nodeId>``, with or without the ``^``/``=`` prefix).
 
         When ``autocreate=True``, a ``None`` value at ``path`` (missing or
         explicitly ``None``) is seeded with ``default`` before the read —
@@ -521,7 +521,7 @@ class _SourceBagNodeMixin:
         ``node.div('hello')`` becomes ``builder._command_on_node(...)``
         when the active builder carries a tag named ``div`` in its
         schema. The grammar semantics (data-element field mapping,
-        ``node_id`` uniqueness, sub-builder switch) live in the shared
+        ``nodeId`` uniqueness, sub-builder switch) live in the shared
         wrapper both entry points converge on — this is pure routing.
         The dialect-prefix escape works for tags as it does for
         attributes: ``node.html_label(...)`` dispatches the ``label``

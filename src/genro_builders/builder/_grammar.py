@@ -68,7 +68,7 @@ class _GrammarMixin:
         both entry points — a node (``body.div(...)``, via
         ``_command_on_node``) and a bag (``root.div(...)``, via
         ``__getattribute__`` → ``_bag_call``) — converge here, so the
-        grammar semantics (data-element field mapping, ``node_id``
+        grammar semantics (data-element field mapping, ``nodeId``
         uniqueness, sub-builder switch) apply identically to both.
         """
         if name.startswith("_"):
@@ -95,11 +95,11 @@ class _GrammarMixin:
             else:
                 node_value = args[0] if args else kwargs.get("node_value")
 
-            # node_id is the document's primary key: uniqueness is
+            # nodeId is the document's primary key: uniqueness is
             # guaranteed by the ROOT builder (one namespace per document,
             # sub-builder subtrees included), whichever entry point and
             # whichever dialect creates the node.
-            node_id = kwargs.get("node_id")
+            node_id = kwargs.get("nodeId")
             if node_id is not None:
                 root_builder = getattr(destination_bag.root, "_builder", None)
                 if root_builder is not None:
@@ -108,7 +108,7 @@ class _GrammarMixin:
                     except KeyError:
                         pass
                     else:
-                        raise ValueError(f"Duplicate node_id '{node_id}'.")
+                        raise ValueError(f"Duplicate nodeId '{node_id}'.")
 
             # Validate original kwargs BEFORE the method call
             self._validate_call_args(info, node_value, kwargs, node_tag)
@@ -384,9 +384,9 @@ class _GrammarMixin:
             )
 
         # Tag not in schema: use set_child() which will validate and raise.
-        # This path never reaches the shared wrapper, so the node_id
+        # This path never reaches the shared wrapper, so the nodeId
         # uniqueness check runs here.
-        node._check_unique_id(attrs.get("node_id"))
+        node._check_unique_id(attrs.get("nodeId"))
         return self.set_child(
             node.value,
             child_tag,

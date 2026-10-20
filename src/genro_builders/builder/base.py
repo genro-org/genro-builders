@@ -10,7 +10,7 @@ placements (sub_tags, parent_tags). Sub-builders and data-elements are ordinary
 declared on this base and marked ``_meta['data_element']``. A builder
 renders itself: it owns its source (the payload under the structural
 ``SOURCE_ROOT`` of a wrapper root), the create/render phases, the first
-calculation and the per-builder node_id lookup. It also owns the data
+calculation and the per-builder nodeId lookup. It also owns the data
 store: one flat Bag, ``builder.data``, reachable from any node as
 ``node.data``. The document is STATIC: a data change is followed by
 rendering again — fine-grained reactivity is a separate engine, still
@@ -140,7 +140,7 @@ class BuilderBase(
     (``_grammar_documents``), or with both; ``_decorated_elements``
     switches its decorated methods off. See ``GRAMMAR_FORMAT.md`` §9.
 
-    Source, lifecycle phases, render_target, node_id and the data store
+    Source, lifecycle phases, render_target, nodeId and the data store
     all belong to the builder itself.
     """
 
@@ -681,13 +681,13 @@ class BuilderBase(
         )
 
     def node_by_id(self, node_id: str) -> Any:
-        """Return the source node carrying ``node_id`` in this builder.
+        """Return the source node carrying ``nodeId`` in this builder.
 
-        Walk-based lookup over this builder's source tree (the node_id
+        Walk-based lookup over this builder's source tree (the nodeId
         namespace is per-builder). Raises ``KeyError`` if no node carries
         the requested id.
         """
-        node = self.source.get_node_by_attr("node_id", node_id)
+        node = self.source.get_node_by_attr("nodeId", node_id)
         if node is None:
             raise KeyError(node_id)
         return node
@@ -1091,7 +1091,7 @@ class BuilderBase(
     #: ``<ns>:<tag>`` (in ``_handle_meta``), so it is grammar meta, never
     #: an emitted XML attribute.
     _meta_attrs: frozenset[str] = frozenset(
-        {"node_id", "_meta", "_anchor", "datapath", "ns"},
+        {"nodeId", "_meta", "_anchor", "datapath", "ns"},
     )
 
     #: Retained attribute FAMILIES (name prefixes): declared on the

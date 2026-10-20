@@ -15,7 +15,7 @@ Covers all supported path forms:
     ``a.#parent.b``     — #parent collapses preceding segment
     ``#FORM.x``         — nearest ancestor with formId or form=True
     ``#ANCHOR.x``       — nearest ancestor with attr _anchor present
-    ``#<node_id>.x``    — node carrying that node_id
+    ``#<nodeId>.x``    — node carrying that nodeId
 
 Test pattern: a Page(HtmlBuilder) runs ``page.create()``; assert on the
 string returned by abs_datapath, never on private helpers.
@@ -43,7 +43,7 @@ def _leaf(main_fn: Callable, node_id: str = "leaf"):
 
 def _simple():
     """A bare leaf node: no datapath ancestors to walk."""
-    return _leaf(lambda root: root.body(node_id="leaf"))
+    return _leaf(lambda root: root.body(nodeId="leaf"))
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ def test_attr_tail_preserved_with_pointer_mark():
 
 def _with_datapath():
     """body has datapath='myform'; the leaf is a child of body."""
-    return _leaf(lambda root: root.body(datapath="myform").div(node_id="leaf"))
+    return _leaf(lambda root: root.body(datapath="myform").div(nodeId="leaf"))
 
 
 def test_relative_resolves_via_ancestor_datapath():
@@ -147,14 +147,14 @@ def test_relative_chains_through_relative_ancestor_datapath():
     def build(root) -> None:
         outer = root.body(datapath="form")
         inner = outer.div(datapath=".row")
-        inner.span(node_id="leaf")
+        inner.span(nodeId="leaf")
 
     _page, leaf = _leaf(build)
     assert leaf.abs_datapath(".name") == "form.row.name"
 
 
 def test_relative_without_anchor_raises_value_error():
-    _page, leaf = _leaf(lambda root: root.body().div(node_id="leaf"))
+    _page, leaf = _leaf(lambda root: root.body().div(nodeId="leaf"))
     with pytest.raises(ValueError):
         leaf.abs_datapath(".name")
 
@@ -163,7 +163,7 @@ def test_relative_walk_uses_leaf_datapath_too():
     """If the leaf itself carries an absolute datapath, the walk starts
     from the node (current = node)."""
     _page, leaf = _leaf(
-        lambda root: root.body().div(node_id="leaf", datapath="own")
+        lambda root: root.body().div(nodeId="leaf", datapath="own")
     )
     assert leaf.abs_datapath(".name") == "own.name"
 
@@ -205,7 +205,7 @@ def test_parent_with_nothing_to_cancel_raises():
 def test_symbolic_form_with_formId():
     """#FORM resolves to the nearest ancestor with attr formId set."""
     _page, leaf = _leaf(
-        lambda root: root.body(formId="inv", datapath="f").div(node_id="leaf")
+        lambda root: root.body(formId="inv", datapath="f").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("#FORM.x") == "f.x"
 
@@ -213,7 +213,7 @@ def test_symbolic_form_with_formId():
 def test_symbolic_form_with_form_true():
     """#FORM also matches form=True (DB-D3, replaces legacy _fakeform)."""
     _page, leaf = _leaf(
-        lambda root: root.body(form=True, datapath="f").div(node_id="leaf")
+        lambda root: root.body(form=True, datapath="f").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("#FORM.x") == "f.x"
 
@@ -224,14 +224,14 @@ def test_symbolic_form_walks_past_unmarked_intermediate():
     def build(root) -> None:
         outer = root.body(formId="inv", datapath="f")
         inner = outer.div()                  # unmarked intermediate
-        inner.span(node_id="leaf")
+        inner.span(nodeId="leaf")
 
     _page, leaf = _leaf(build)
     assert leaf.abs_datapath("#FORM.x") == "f.x"
 
 
 def test_symbolic_form_without_marked_ancestor_raises_key_error():
-    _page, leaf = _leaf(lambda root: root.body().div(node_id="leaf"))
+    _page, leaf = _leaf(lambda root: root.body().div(nodeId="leaf"))
     with pytest.raises(KeyError):
         leaf.abs_datapath("#FORM.x")
 
@@ -239,7 +239,7 @@ def test_symbolic_form_without_marked_ancestor_raises_key_error():
 def test_symbolic_anchor_with_attribute_presence():
     """#ANCHOR matches the nearest ancestor with attr _anchor present."""
     _page, leaf = _leaf(
-        lambda root: root.body(_anchor="whatever", datapath="a").div(node_id="leaf")
+        lambda root: root.body(_anchor="whatever", datapath="a").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("#ANCHOR.x") == "a.x"
 
@@ -247,13 +247,13 @@ def test_symbolic_anchor_with_attribute_presence():
 def test_symbolic_anchor_value_is_arbitrary():
     """_anchor value is arbitrary: presence alone is the marker."""
     _page, leaf = _leaf(
-        lambda root: root.body(_anchor=True, datapath="a").div(node_id="leaf")
+        lambda root: root.body(_anchor=True, datapath="a").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("#ANCHOR.x") == "a.x"
 
 
 def test_symbolic_anchor_without_marker_raises_key_error():
-    _page, leaf = _leaf(lambda root: root.body().div(node_id="leaf"))
+    _page, leaf = _leaf(lambda root: root.body().div(nodeId="leaf"))
     with pytest.raises(KeyError):
         leaf.abs_datapath("#ANCHOR.x")
 
@@ -261,7 +261,7 @@ def test_symbolic_anchor_without_marker_raises_key_error():
 def test_symbolic_node_id_resolves_via_node_by_id():
     """#<id> dispatches to node_by_id and composes with the target's datapath."""
     _page, leaf = _leaf(
-        lambda root: root.body(node_id="hub", datapath="rec").div(node_id="leaf")
+        lambda root: root.body(nodeId="hub", datapath="rec").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("#hub.x") == "rec.x"
 
@@ -275,6 +275,6 @@ def test_symbolic_unknown_id_raises_key_error():
 def test_symbolic_with_pointer_mark():
     """^#FORM.x: pointer mark is stripped, symbolic dispatch happens after."""
     _page, leaf = _leaf(
-        lambda root: root.body(formId="inv", datapath="f").div(node_id="leaf")
+        lambda root: root.body(formId="inv", datapath="f").div(nodeId="leaf")
     )
     assert leaf.abs_datapath("^#FORM.x") == "f.x"

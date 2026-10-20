@@ -164,7 +164,7 @@ SIGNATURE_SKIP_PARAMS = frozenset({
 
 #: Framework keywords accepted at CALL time by every element, whatever its
 #: signature. Node placement and identity (``node_label``, ``node_position``,
-#: ``node_id``), data binding and iteration (``datapath``, ``store``,
+#: ``nodeId``), data binding and iteration (``datapath``, ``store``,
 #: ``iterate``, ``target_id``) are addressed to the framework, not to the
 #: grammar, and ``_tag`` is an internal marker stripped right after
 #: validation. None of them belongs to any dialect's vocabulary, so a
@@ -180,7 +180,7 @@ SIGNATURE_SKIP_PARAMS = frozenset({
 FRAMEWORK_CALL_KWARGS = frozenset({
     "node_label",
     "node_position",
-    "node_id",
+    "nodeId",
     "target_id",
     "datapath",
     "iterate",

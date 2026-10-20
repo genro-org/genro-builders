@@ -128,9 +128,15 @@ def test_var_keyword_signature_stays_open():
 
 
 def test_framework_kwargs_pass_a_closed_signature():
-    """node_id and friends are consumed by the framework, never declared."""
+    """nodeId and friends are consumed by the framework, never declared."""
     node = _mounts_node()
-    node.annotated(name="x", bucket="b", node_id="m1")
+    node.annotated(name="x", bucket="b", nodeId="m1")
+
+
+def test_old_source_identity_spelling_is_not_a_framework_keyword():
+    node = _mounts_node()
+    with pytest.raises(ValueError, match="node_id"):
+        node.annotated(name="x", bucket="b", node_id="m1")
 
 
 def test_id_is_not_a_framework_kwarg():
