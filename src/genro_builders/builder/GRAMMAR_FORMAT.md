@@ -345,17 +345,17 @@ Catalog names are public ASCII identifiers, beginning with a letter. Python
 keywords, registry API names (`register`, `validate`, `resolve`, `to_dict`,
 `from_dict`, `toJSON`, `fromJSON`) and Object prototype names are reserved.
 
-All named constraints have **input validation semantics**: check the original
-value, before pointer interpretation/resolution and before exposing reactive
-pointers for subscription. This is fixed by the `custom` descriptor kind; no
-separate validation-stage field is needed in this version. It is not a
-resolved-value contract. Check Source loaded from serialization against its
-owning grammar as well as Source built through helpers. The check is repeated
-before runtime resolution and in explicit Source validation.
+All named constraints have **input validation semantics**: they check the
+literal value written in the Source. A pointer (a string starting with `^` or
+`=`, not with `==`) is accepted on every parameter, whatever its annotation,
+and is not checked. This is not a resolved-value contract: the value a pointer
+resolves to is not checked. Source loaded from serialization is checked against
+its owning grammar as well as Source built through helpers. The check is
+repeated before runtime resolution and in explicit Source validation.
 
-For `no_pointer`, leading `^` and `=` are forbidden (`==` is covered by `=`).
-Empty and multiline literal strings remain valid. No global permission change
-is applied to plain string parameters. Handwritten helpers must map argument
+The `no_pointer` regex therefore only rejects literal strings starting with
+`==`: a value starting with `^` or `=` is a pointer and is accepted. Empty and
+multiline literal strings remain valid. Handwritten helpers must map argument
 contracts onto the actual Source attribute declaration; annotating only a
 helper's argument does not provide a serialized Source contract.
 

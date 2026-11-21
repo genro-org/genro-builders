@@ -458,7 +458,7 @@ class _GrammarMixin:
         values = dict(node.attr)
         values["node_value"] = node.value
         for name, (base, validators, _) in (info.get("call_args_validations") or {}).items():
-            if name not in values:
+            if name not in values or node.parent_bag.pointer_type(values[name]):
                 continue
             checks = [v for v in validators if isinstance(v, _CustomType)]
             if not checks and not _contains_custom_type(base):
@@ -486,7 +486,11 @@ class _GrammarMixin:
         attr: dict[str, Any],
         node_tag: str = "",
     ) -> None:
-        """Validate attributes and node_value. Raises ValueError if invalid."""
+        """Validate attributes and node_value. Raises ValueError if invalid.
+
+        A pointer (``self.source.pointer_type``) is accepted on every
+        parameter, whatever its annotation: only literal values are checked.
+        """
         self._validate_declared_names(info, attr, node_tag)
 
         call_args_validations = info.get("call_args_validations")
@@ -531,6 +535,9 @@ class _GrammarMixin:
 
                 if attr_value is None:
                     continue
+
+            if self.source.pointer_type(attr_value):
+                continue
 
             # Type check
             if not _check_type(attr_value, base_type, strict_json_primitives=loaded):

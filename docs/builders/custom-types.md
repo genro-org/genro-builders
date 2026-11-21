@@ -37,13 +37,15 @@ a handwritten helper. `ct.to_dict()` returns independent JSON-compatible data;
 
 ## Original input and pointers
 
-Registered constraints apply to **original input**. `ct.no_pointer` rejects
-strings starting with `^` or `=`, including `==`; it allows empty and multiline
-literal strings. Plain `str` keeps its existing behavior in pointer-capable
-paths. Registered types do not describe the type of a pointer's resolved value.
-An email/code validator checks the supplied string, not a later resolved value.
+Registered constraints apply to **literal input**. A pointer (a string
+starting with `^` or `=`, not with `==`) is accepted on every parameter,
+whatever its annotation, registered types included, and is not checked. So
+`ct.no_pointer` only rejects literal strings starting with `==`; it allows
+empty and multiline literal strings. Registered types do not describe the type
+of a pointer's resolved value. An email/code validator checks the supplied
+string, not a later resolved value.
 
-The builder checks named constraints at authoring and again before runtime
+The builder checks named constraints on literal values at authoring and again before runtime
 resolution, before `node.pointers()` exposes reactive bindings, and during
 `validate_source()`. The latter still reports missing child cardinalities but
 raises on invalid registered input. These checks also cover a deserialized or

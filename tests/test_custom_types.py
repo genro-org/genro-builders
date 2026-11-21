@@ -85,17 +85,23 @@ def test_literal_strings_and_permitted_pointer_resolution(tmp_path, loaded, meth
 
 
 @pytest.mark.parametrize("loaded", [False, True])
-@pytest.mark.parametrize("method", ["^method", "=method", "==method", "^", "="])
-def test_forbidden_pointers_rejected_at_creation(tmp_path, loaded, method):
+@pytest.mark.parametrize("method", ["^method", "=method", "^", "="])
+def test_pointers_accepted_on_registered_type(tmp_path, loaded, method):
+    """A pointer is accepted on every parameter: constraints check literals only."""
+    builder = (load(tmp_path) if loaded else ContactBuilder)()
+    builder.source.contact(method=method, code="AB1234")
+    assert len(builder.source) == 1
+
+
+@pytest.mark.parametrize("loaded", [False, True])
+def test_double_equals_literal_rejected_at_creation(tmp_path, loaded):
     builder = (load(tmp_path) if loaded else ContactBuilder)()
     with pytest.raises(ValueError, match="no_pointer"):
-        builder.source.contact(method=method, code="AB1234")
+        builder.source.contact(method="==method", code="AB1234")
     assert len(builder.source) == 0
 
 
-@pytest.mark.parametrize("method", ["^method", "=method", "==method"])
-@pytest.mark.parametrize("serialized", [False, True])
-def test_raw_source_checked_before_resolution_and_pointer_discovery(tmp_path, method, serialized):
+def _restored_contact(tmp_path, method, serialized):
     builder = load(tmp_path)()
     node = builder.source.contact(method="details", code="AB1234", record_id="^record_id")
     node.set_attr(method=method)
@@ -105,9 +111,24 @@ def test_raw_source_checked_before_resolution_and_pointer_discovery(tmp_path, me
         source.set_backref()
         builder.source = source
         node = source.get_nodes()[0]
+    return builder, node
+
+
+@pytest.mark.parametrize("serialized", [False, True])
+def test_raw_source_literal_checked_before_resolution_and_pointer_discovery(tmp_path, serialized):
+    builder, node = _restored_contact(tmp_path, "==method", serialized)
     for consume in (lambda: builder.runtime_values(node), node.pointers, builder.validate_source):
         with pytest.raises(ValueError, match="no_pointer"):
             consume()
+
+
+@pytest.mark.parametrize("method", ["^method", "=method"])
+@pytest.mark.parametrize("serialized", [False, True])
+def test_raw_source_pointer_passes_recheck(tmp_path, method, serialized):
+    builder, node = _restored_contact(tmp_path, method, serialized)
+    builder.runtime_values(node)
+    node.pointers()
+    builder.validate_source()
 
 
 @pytest.mark.parametrize("loaded", [False, True])
@@ -181,7 +202,7 @@ def test_subbuilder_envelope_keeps_its_host_constraint():
     builder = Host()
     node = builder.source.mount(method="details")
     assert isinstance(node.builder, Inner)
-    node.set_attr(method="^method")
+    node.set_attr(method="==method")
     for consume in (lambda: builder.runtime_values(node), node.pointers, builder.validate_source):
         with pytest.raises(ValueError, match="no_pointer"):
             consume()
