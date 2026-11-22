@@ -1,5 +1,36 @@
 # Changelog
 
+All notable changes to genro-builders are recorded here. From 0.31.0 the
+format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
+versions follow [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [0.31.0] - 2026-11-22
+
+### Changed
+
+- A `CustomTypes` constraint that refuses strings starting with `^` or `=`
+  (the documented `no_pointer` pattern) no longer refuses a pointer: it checks
+  literal values only. A grammar that relied on it to forbid pointers has no
+  replacement; there is no way to forbid a pointer on a parameter.
+- Every element parameter accepts a Data pointer (`^path`, `=path`, not
+  `==`), whatever its annotation: `int`, `Literal`, `Regex`, `Range` and
+  `CustomTypes` included. Literal values keep their checks. The value a pointer
+  resolves to is not checked (#63).
+
+### Added
+
+- `SourceBag.pointer_type(value)`. `SourceBagNode.pointer_type` keeps working
+  and delegates to its bag.
+
+### Fixed
+
+- A `subbuilder="kwarg:attr"` reference is resolved before the node is
+  inserted: an authoring error no longer leaves a partial node in the Source.
+  A pointer on that parameter is refused, since it selects the subtree grammar
+  while the recipe is written.
+
 ## 0.30.0 — 2026-10-20
 
 - BREAKING: Source identity uses `nodeId` in both Python and JavaScript. Update

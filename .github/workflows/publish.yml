@@ -70,6 +70,20 @@ jobs:
           name: python-package-distributions
           path: dist/
 
+      - name: Extract changelog section
+        run: |
+          version='${{ github.ref_name }}'
+          version="${version#v}"
+          awk -v heading="## [${version}]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "CHANGELOG.md has no section for ${version}" >&2
+            exit 1
+          fi
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -77,5 +91,5 @@ jobs:
           gh release create '${{ github.ref_name }}' \
             --repo='${{ github.repository }}' \
             --title='${{ github.ref_name }}' \
-            --generate-notes \
+            --notes-file release-notes.md \
             dist/*
