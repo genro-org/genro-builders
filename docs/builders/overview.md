@@ -78,6 +78,32 @@ class MyBuilder(BuilderBase):
 An unknown item in `sub_tags` raises at class definition time. See
 [Decorators](decorators.md) for the full list.
 
+### Typed parameters and pointers
+
+The annotations of an element check the values written in the recipe. A
+Data pointer (a string starting with `^` or `=`, not with `==`) is accepted on
+every parameter, whatever its annotation:
+
+```python
+from typing import Annotated
+from genro_builders.builder import Range
+
+@element(sub_tags='')
+def deployment(self, name: str, replicas: Annotated[int, Range(ge=0)] | None = None): ...
+
+root.deployment(name='web', replicas='^app.replicas')  # accepted: a pointer
+root.deployment(name='web', replicas=-1)               # refused: Range
+root.deployment(name='web', replicas='three')          # refused: not an int
+```
+
+- There is no way to forbid a pointer on a parameter. A parameter that must
+  not receive one says so in its documentation.
+- One exception: the parameter named by a `subbuilder="kwarg:attr"` reference
+  selects the grammar of the subtree while the recipe is written, so it needs
+  the object itself. A pointer there raises, and the node is not inserted.
+- The value a pointer resolves to is not checked: `data['app.replicas'] =
+  'three'` renders `three`.
+
 ## Grammar documents
 
 A builder class can also declare its grammar in JSON documents, the

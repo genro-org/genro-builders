@@ -113,23 +113,26 @@ class _GrammarMixin:
             # Validate original kwargs BEFORE the method call
             self._validate_call_args(info, node_value, kwargs, node_tag)
 
+            # Sub-builder element: ``_meta['subbuilder']`` names the dialect
+            # active from this node down — a registry name (``"svg"``) or a
+            # parameter reference (``"kwarg:attr"``, resolved against the
+            # recipe kwargs here, the one point that sees them). Resolved
+            # BEFORE the node is inserted, so an authoring error leaves the
+            # Source untouched. The child then carries its own ``_builder``;
+            # the descent resolves the foreign grammar instead of the host's.
+            sub_name = meta.get("subbuilder")
+            sub_builder = None
+            if sub_name is not None:
+                sub_target = self._resolve_subbuilder_reference(sub_name, kwargs, node_tag)
+                if sub_target is not None:
+                    sub_builder = self.get_subbuilder(sub_target)
+
             # Element: no adapter, register directly with original kwargs
             kwargs.pop("node_value", None)
             kwargs.pop("_tag", None)  # internal marker, never an attribute
             child = self._add_element(destination_bag, node_value, node_tag=node_tag, **kwargs)
-
-            # Sub-builder element: ``_meta['subbuilder']`` names the dialect
-            # active from this node down — a registry name (``"svg"``) or a
-            # parameter reference (``"kwarg:attr"``, resolved against the
-            # recipe kwargs here, the one point that sees them). Switch the
-            # child's active builder (the node carries its own
-            # ``_builder``); the descent then resolves the foreign grammar
-            # instead of the host's.
-            sub_name = meta.get("subbuilder")
-            if sub_name is not None:
-                sub_target = self._resolve_subbuilder_reference(sub_name, kwargs, node_tag)
-                if sub_target is not None:
-                    child._builder = self.get_subbuilder(sub_target)
+            if sub_builder is not None:
+                child._builder = sub_builder
             return child
 
         return wrapper
@@ -146,7 +149,8 @@ class _GrammarMixin:
         unset means NO switch (returns None): the node stays a leaf of the
         host grammar. A set kwarg missing the declared attribute, or whose
         attribute is not a class, is an authoring error raised at the
-        recipe line.
+        recipe line. A pointer is refused: the subtree grammar is chosen
+        while the recipe is written, so it needs the object itself.
         """
         if ":" not in spec:
             return spec
@@ -154,6 +158,12 @@ class _GrammarMixin:
         value = kwargs.get(kwarg)
         if value is None:
             return None
+        if self.source.bag_pointer_type(value):
+            raise ValueError(
+                f"'{node_tag}': subbuilder reference {spec!r} — {kwarg!r} "
+                f"selects the subtree grammar and needs an object, not the "
+                f"pointer {value!r}",
+            )
         grammar = getattr(value, attr_name, None)
         if grammar is None:
             raise ValueError(
@@ -458,7 +468,7 @@ class _GrammarMixin:
         values = dict(node.attr)
         values["node_value"] = node.value
         for name, (base, validators, _) in (info.get("call_args_validations") or {}).items():
-            if name not in values:
+            if name not in values or node.parent_bag.bag_pointer_type(values[name]):
                 continue
             checks = [v for v in validators if isinstance(v, _CustomType)]
             if not checks and not _contains_custom_type(base):
@@ -486,7 +496,11 @@ class _GrammarMixin:
         attr: dict[str, Any],
         node_tag: str = "",
     ) -> None:
-        """Validate attributes and node_value. Raises ValueError if invalid."""
+        """Validate attributes and node_value. Raises ValueError if invalid.
+
+        A pointer (``self.source.bag_pointer_type``) is accepted on every
+        parameter, whatever its annotation: only literal values are checked.
+        """
         self._validate_declared_names(info, attr, node_tag)
 
         call_args_validations = info.get("call_args_validations")
@@ -531,6 +545,9 @@ class _GrammarMixin:
 
                 if attr_value is None:
                     continue
+
+            if self.source.bag_pointer_type(attr_value):
+                continue
 
             # Type check
             if not _check_type(attr_value, base_type, strict_json_primitives=loaded):

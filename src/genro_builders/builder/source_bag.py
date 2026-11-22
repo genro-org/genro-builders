@@ -186,10 +186,8 @@ class _SourceBagNodeMixin:
         return result
 
     def pointer_type(self, v: Any) -> str | None:
-        """Return ``"^"`` (reactive), ``"="`` (passive) or ``None``."""
-        if isinstance(v, str) and v[:1] in ("^", "=") and not v.startswith("=="):
-            return v[0]
-        return None
+        """Return ``"^"`` (reactive), ``"="`` (passive) or ``None``; see the bag."""
+        return self.parent_bag.bag_pointer_type(v)
 
     def fixed_attr_items(self) -> Any:
         """Yield ``(name, value)`` for domain attributes, names canonicalized.
@@ -622,6 +620,12 @@ class _SourceBagMixin:
         if builder is not None:
             base.update(builder._schema_tag_names.values())
         return sorted(base)
+
+    def pointer_type(self, v: Any) -> str | None:
+        """Return ``"^"`` (reactive), ``"="`` (passive) or ``None``."""
+        if isinstance(v, str) and v[:1] in ("^", "=") and not v.startswith("=="):
+            return v[0]
+        return None
 
 
 class SourceBagNode(BagNode, _SourceBagNodeMixin):
