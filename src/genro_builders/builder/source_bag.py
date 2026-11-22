@@ -187,7 +187,7 @@ class _SourceBagNodeMixin:
 
     def pointer_type(self, v: Any) -> str | None:
         """Return ``"^"`` (reactive), ``"="`` (passive) or ``None``; see the bag."""
-        return self.parent_bag.pointer_type(v)
+        return self.parent_bag.bag_pointer_type(v)
 
     def fixed_attr_items(self) -> Any:
         """Yield ``(name, value)`` for domain attributes, names canonicalized.

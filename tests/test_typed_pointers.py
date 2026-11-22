@@ -95,3 +95,70 @@ def test_resolved_value_is_not_checked(builder):
     node = builder.source.deployment(name="web", replicas="^app.replicas")
     _, attrs = builder.runtime_values(node)
     assert attrs["replicas"] == "three"
+
+
+class PointerTypeTagBuilder(BuilderBase):
+    """A dialect may name an element ``pointer_type``: grammar names win on a bag."""
+
+    _name = "typed_pointers_tag_collision"
+
+    @element(sub_tags="")
+    def pointer_type(self, node_value: str): ...
+
+    @element(sub_tags="")
+    def count(self, node_value: int): ...
+
+
+def test_element_named_pointer_type_does_not_shadow_the_rule():
+    builder = PointerTypeTagBuilder()
+    node = builder.source.count(3)
+    assert builder.source.count("^app.count").value == "^app.count"
+    assert node.pointer_type("^x") == "^"
+    builder.source.pointer_type("text")
+    with pytest.raises(ValueError):
+        builder.source.count("three")
+
+
+class InnerGrammar(BuilderBase):
+    _name = "typed_pointers_inner"
+
+    @element(sub_tags="")
+    def leaf(self): ...
+
+
+class App:
+    grammar = InnerGrammar
+
+
+class HostBuilder(BuilderBase):
+    _name = "typed_pointers_host"
+
+    @element(sub_tags="*", _meta={"subbuilder": "app:grammar"})
+    def application(self, app: App | None = None): ...
+
+
+def test_subbuilder_selector_refuses_a_pointer_and_leaves_source_untouched():
+    """The subtree grammar is chosen while the recipe is written: it needs the object."""
+    builder = HostBuilder()
+    builder.data["app"] = App()
+    with pytest.raises(ValueError, match="needs an object, not the pointer"):
+        builder.source.application(app="^app")
+    assert len(builder.source) == 0
+
+
+class AppWithoutGrammar(App):
+    grammar = None
+
+
+def test_subbuilder_selector_error_leaves_source_untouched():
+    builder = HostBuilder()
+    with pytest.raises(ValueError, match="has no attribute 'grammar'"):
+        builder.source.application(app=AppWithoutGrammar())
+    assert len(builder.source) == 0
+
+
+def test_subbuilder_selector_with_an_object_switches_grammar():
+    builder = HostBuilder()
+    node = builder.source.application(app=App())
+    assert isinstance(node.builder, InnerGrammar)
+    node.leaf()

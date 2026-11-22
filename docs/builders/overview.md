@@ -98,6 +98,9 @@ root.deployment(name='web', replicas='three')          # refused: not an int
 
 - There is no way to forbid a pointer on a parameter. A parameter that must
   not receive one says so in its documentation.
+- One exception: the parameter named by a `subbuilder="kwarg:attr"` reference
+  selects the grammar of the subtree while the recipe is written, so it needs
+  the object itself. A pointer there raises, and the node is not inserted.
 - The value a pointer resolves to is not checked: `data['app.replicas'] =
   'three'` renders `three`.
 
